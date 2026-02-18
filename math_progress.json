@@ -1,0 +1,18 @@
+{
+  "users": {
+    "default": {
+      "scores": [
+        {
+          "score": 6,
+          "totalQuestions": 10,
+          "percentage": 60,
+          "date": "2026-02-18T17:29:50.802Z"
+        }
+      ],
+      "badges": [
+        "Budding Gardener Badge"
+      ],
+      "highScore": 60
+    }
+  }
+}
