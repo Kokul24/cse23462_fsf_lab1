@@ -19,6 +19,9 @@ const BarChartVisual = () => {
     const lastSpoken = useRef('');
     const [windowSize, setWindowSize] = useState({ w: window.innerWidth, h: window.innerHeight });
 
+    // Numpad toggle — open by default
+    const [numpadOpen, setNumpadOpen] = useState(true);
+
     const target = TARGETS[targetIndex];
     const myValue = sliderValue * sliderValue;
 
@@ -72,11 +75,19 @@ const BarChartVisual = () => {
         provideFeedback(val);
     };
 
+    // Numpad handler
+    const handleNumpadSelect = (num) => {
+        setSliderValue(num);
+        lastSpoken.current = '';
+        provideFeedback(num);
+    };
+
     const handleNext = () => {
         setTargetIndex((i) => (i + 1) % TARGETS.length);
         setSliderValue(1);
         setMatched(false);
         lastSpoken.current = '';
+        setNumpadOpen(true);
     };
 
     const chartData = [
@@ -95,6 +106,9 @@ const BarChartVisual = () => {
         if (myValue < target) return '📏 Too Short';
         return '📐 Too Tall';
     };
+
+    // Bubble position
+    const bubbleLeftPercent = ((sliderValue - 1) / (10 - 1)) * 100;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-sky-50 to-cyan-50 pb-24">
@@ -158,26 +172,78 @@ const BarChartVisual = () => {
                     </ResponsiveContainer>
                 </motion.div>
 
-                {/* Slider */}
+                {/* Slider with Floating Bubble */}
                 <div className="mb-6">
                     <label className="block text-center text-gray-600 font-semibold mb-2">
                         Your Number: <span className="text-2xl text-blue-600">{sliderValue}</span>
                         <span className="ml-3 text-gray-400">({sliderValue} × {sliderValue} = {myValue})</span>
                     </label>
-                    <input
-                        type="range"
-                        min="1"
-                        max="10"
-                        value={sliderValue}
-                        onChange={handleSliderChange}
-                        disabled={matched}
-                        className="w-full h-3 rounded-full appearance-none cursor-pointer bg-gradient-to-r from-blue-200 to-cyan-300 accent-blue-500"
-                    />
-                    <div className="flex justify-between text-xs text-gray-400 mt-1 px-1">
-                        {[...Array(10)].map((_, i) => (
-                            <span key={i}>{i + 1}</span>
-                        ))}
+
+                    <div className="relative">
+                        {/* Floating Tooltip Bubble */}
+                        <motion.div
+                            className="absolute -top-10 pointer-events-none select-none"
+                            style={{ left: `${bubbleLeftPercent}%`, transform: 'translateX(-50%)' }}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            key={sliderValue}
+                            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+                        >
+                            <div className="relative bg-gradient-to-br from-blue-500 to-cyan-600 text-white text-sm font-bold px-3 py-1.5 rounded-xl shadow-lg whitespace-nowrap">
+                                {sliderValue} × {sliderValue} = {myValue}
+                                <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-cyan-600" />
+                            </div>
+                        </motion.div>
+
+                        <input
+                            type="range"
+                            min="1"
+                            max="10"
+                            value={sliderValue}
+                            onChange={handleSliderChange}
+                            disabled={matched}
+                            className="w-full h-3 rounded-full appearance-none cursor-pointer bg-gradient-to-r from-blue-200 to-cyan-300 accent-blue-500"
+                        />
+                        <div className="flex justify-between text-xs text-gray-400 mt-1 px-1">
+                            {[...Array(10)].map((_, i) => (
+                                <span key={i}>{i + 1}</span>
+                            ))}
+                        </div>
                     </div>
+
+                    {/* Toggle Button for Number Pad */}
+                    <button
+                        onClick={() => setNumpadOpen((prev) => !prev)}
+                        className="mt-3 w-full py-2 text-sm font-semibold rounded-xl border-2 transition-colors bg-blue-50 border-blue-200 text-blue-600 hover:bg-blue-100"
+                    >
+                        {numpadOpen ? '⌨️ Hide Number Pad' : '⌨️ Show Number Pad'}
+                    </button>
+
+                    {/* Inline Number Pad */}
+                    {numpadOpen && (
+                        <div className="mt-3 grid grid-cols-5 gap-2">
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                                <motion.button
+                                    key={num}
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.9 }}
+                                    onClick={() => handleNumpadSelect(num)}
+                                    disabled={matched}
+                                    className={`
+                                        aspect-square rounded-2xl text-xl font-extrabold
+                                        flex items-center justify-center shadow-md transition-colors
+                                        ${num === sliderValue
+                                            ? 'bg-gradient-to-br from-blue-400 to-cyan-500 text-white ring-3 ring-blue-300'
+                                            : 'bg-blue-50 text-blue-700 border-2 border-blue-200 hover:border-blue-400'
+                                        }
+                                        disabled:opacity-40
+                                    `}
+                                >
+                                    {num}
+                                </motion.button>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* Feedback Badge */}
@@ -188,10 +254,10 @@ const BarChartVisual = () => {
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.8, opacity: 0 }}
                         className={`text-center p-4 rounded-2xl font-semibold text-lg ${matched
-                                ? 'bg-green-100 text-green-700 border border-green-300'
-                                : myValue < target
-                                    ? 'bg-orange-50 text-orange-600 border border-orange-200'
-                                    : 'bg-red-50 text-red-500 border border-red-200'
+                            ? 'bg-green-100 text-green-700 border border-green-300'
+                            : myValue < target
+                                ? 'bg-orange-50 text-orange-600 border border-orange-200'
+                                : 'bg-red-50 text-red-500 border border-red-200'
                             }`}
                     >
                         {matched
