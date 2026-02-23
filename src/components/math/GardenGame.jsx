@@ -25,7 +25,9 @@ const GardenGame = () => {
     const [numpadOpen, setNumpadOpen] = useState(true);
 
     // Polaroid capture (react-screen-capture)
-    const { startCapture, handleEndCapture, isCapturing, flashVisible } = usePolaroidCapture();
+    const { startCapture, handleEndCapture, isCapturing, flashVisible } = usePolaroidCapture({
+        filename: 'my-awesome-garden.png',
+    });
 
     // Track window size for confetti
     useEffect(() => {

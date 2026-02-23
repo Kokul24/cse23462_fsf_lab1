@@ -4,6 +4,8 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import Confetti from 'react-confetti';
 import { useSpeech } from '../../hooks/useSpeech';
 import { useStars } from '../../context/StarContext';
+import { ScreenCapture } from 'react-screen-capture';
+import { usePolaroidCapture } from '../../hooks/usePolaroidCapture';
 
 const QUESTIONS = [
     {
@@ -88,6 +90,10 @@ const MathQuiz = () => {
     const [badges, setBadges] = useState([]);
     const [answers, setAnswers] = useState([]);   // Track each answer for the report
     const [windowSize, setWindowSize] = useState({ w: window.innerWidth, h: window.innerHeight });
+
+    const { startCapture, handleEndCapture, isCapturing, flashVisible } = usePolaroidCapture({
+        filename: 'my-maths-quiz-report.png',
+    });
 
     useEffect(() => {
         const handleResize = () => setWindowSize({ w: window.innerWidth, h: window.innerHeight });
@@ -193,8 +199,21 @@ const MathQuiz = () => {
         };
 
         return (
+            <ScreenCapture onEndCapture={handleEndCapture}>
+                {({ onStartCapture }) => (
             <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50 pb-24">
                 {showConfetti && <Confetti width={windowSize.w} height={windowSize.h} recycle={false} numberOfPieces={400} />}
+                <AnimatePresence>
+                    {flashVisible && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.1 }}
+                            className="fixed inset-0 bg-white z-[100] pointer-events-none"
+                        />
+                    )}
+                </AnimatePresence>
 
                 {/* Header */}
                 <div className="text-center pt-8 pb-4">
@@ -342,8 +361,8 @@ const MathQuiz = () => {
                     </div>
                 </motion.div>
 
-                {/* Try Again */}
-                <div className="max-w-2xl mx-auto px-4">
+                {/* Try Again + Save Report */}
+                <div className="max-w-2xl mx-auto px-4 flex flex-col gap-3">
                     <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -352,8 +371,19 @@ const MathQuiz = () => {
                     >
                         🔄 Try Again!
                     </motion.button>
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        disabled={isCapturing}
+                        onClick={() => startCapture(onStartCapture)}
+                        className="w-full py-4 bg-gradient-to-r from-amber-400 to-yellow-500 text-white font-bold text-lg rounded-xl shadow-lg disabled:opacity-50"
+                    >
+                        📸 {isCapturing ? 'Saving...' : 'Save My Report!'}
+                    </motion.button>
                 </div>
             </div>
+                )}
+            </ScreenCapture>
         );
     }
 

@@ -4,6 +4,8 @@ import { jobs } from '../jobsData';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, CheckCircle, XCircle, RotateCcw } from 'lucide-react';
 import { useTTS } from '../hooks/useTTS';
+import { ScreenCapture } from 'react-screen-capture';
+import { usePolaroidCapture } from '../hooks/usePolaroidCapture';
 
 const questions = [
     { id: 1, text: "Who grows our fresh food?", answerId: "farmer" },
@@ -24,6 +26,10 @@ const Quiz = () => {
     const [userAnswers, setUserAnswers] = useState([]);
     const [isFinished, setIsFinished] = useState(false);
     const [lockInput, setLockInput] = useState(false);
+
+    const { startCapture, handleEndCapture, isCapturing, flashVisible } = usePolaroidCapture({
+        filename: 'my-quiz-results.png',
+    });
 
     const currentQuestion = questions[currentQIndex];
 
@@ -144,11 +150,24 @@ const Quiz = () => {
     if (isFinished) {
         const score = userAnswers.filter(a => a.isCorrect).length;
         return (
+            <ScreenCapture onEndCapture={handleEndCapture}>
+                {({ onStartCapture }) => (
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="min-h-screen bg-gradient-to-br from-teal-50 via-cyan-50 to-blue-100 p-6 flex flex-col items-center pb-20"
             >
+                <AnimatePresence>
+                    {flashVisible && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.1 }}
+                            className="fixed inset-0 bg-white z-[100] pointer-events-none"
+                        />
+                    )}
+                </AnimatePresence>
                 <motion.h1
                     initial={{ y: -50, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
@@ -274,8 +293,19 @@ const Quiz = () => {
                     >
                         <RotateCcw /> Retry
                     </motion.button>
+                    <motion.button
+                        whileHover={{ scale: 1.1, rotate: -3 }}
+                        whileTap={{ scale: 0.95 }}
+                        disabled={isCapturing}
+                        onClick={() => startCapture(onStartCapture)}
+                        className="flex items-center gap-2 text-xl font-bold text-white bg-gradient-to-r from-amber-400 to-yellow-500 px-8 py-4 rounded-full shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
+                    >
+                        📸 {isCapturing ? 'Saving...' : 'Save Results!'}
+                    </motion.button>
                 </motion.div>
             </motion.div>
+                )}
+            </ScreenCapture>
         );
     }
 
